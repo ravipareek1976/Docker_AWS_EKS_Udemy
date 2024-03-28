@@ -1,0 +1,425 @@
+UDEMY COurse : Kubernetes(K8s) for the Absolute Beginners - Hands-on
+Instructors
+Mumshad Mannambeth
+Learn Kubernetes in simple, easy and fun way with hands-on coding exercises. For beginners in DevOps.
+
+************************
+Intially all labs online KOdeCLoud Infra.
+Link: https://uklabs.kodekloud.com/courses/labs-kubernetes-for-the-absolute-beginners-hands-on/
+Apply the coupon code kk-labs-k8b-lakjg328321095305
+*********************************************POD Start***************
+Kubernetese CLuster--->many nodes-->each node have many  pods
+Node: mean physical capacity
+
+2) Usually POD has only one container, for scaling purpose POD is created new worked node.
+3)But if there is some supporting container(Helper COntainer) that can be kep in same POD.
+4)With IN Same POD container can connect eact other as local host, share same network.
+5) MINIKUBE: single Node(VM) cluster on PC, it need Hypervisor(KVM,virtual box) for local developement , lighweight environment.
+6) MINIKUBe can be installed at docker without Hypervisor.
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^  COmmands^^^^^^^^^^^^^^^^^
+to run docker app 
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^YAML STARTS ^^^^^^^^^^^^^^^^^^
+Key Value Pair,
+Array/List
+Disctory/Map 
+List of dictionary/map
+Disctionary with in another disctionary possible.
+Disctionary is unordered collection
+List is Ordered collection
+# Any liwith # is comment
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^YAML ENDS
+docker run pytho-app // command for running app 
+docker run  helper -link app4
+kubectl run nginx --image= nginx // dowload image from docker repo, create pod, deploy container
+                                  // in K8s  privet or public repositroies can be configured.
+kubectl get pods //list of pods
+kubectl version // 
+
+^^^^^^^^^^^^^^^^^^^^START^^^^^^^^^^install sample app on minikube  and expose on NOdePort and run in browser^^^^^^^^^^^^
+minikube start drivername=virtualbox //  rvirtualbox is hypervisoron name instlled  before minikube
+                                      // this command will download image of K8s and run in locally
+minikube status // it will show APIserver, kubelete, kubeconfig,controle plan running status
+kubectl get nodes /// will give node
+
+# Run a test container image that includes a webserver
+kubectl create deployment hello-minikube --image=kicbase/echo-server:1.0 // creating deployment
+kubectl get deployments  // check of it is done
+kubectl expose deployment hello-minikube --type=NodePort --port=8080  // now expose it
+minikube service  hello-minikube --url // it will show URL fort he app , use in browser that for accessing app.
+kubectl delete services  hello-minikube // delete the service 
+kubectl delete deployment  hello-minikube  // after this app will no longer be accessible
+^^^^^^^^^^^^^^^^^^^^END^^^^^^^^^^install sample app on minikube  and expose on NOdePort and run in browser^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^POD creation via CLI^^^^^^^^^^^^
+kubectl run nginx --image= nginx // dowload image from docker repo, create pod, deploy container
+kubectl get pods
+kubectl get pods -o wide // litle more detaisl
+kubectl describe pod name_pod // detail about the pod
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^POD with YAML creation
+                    >>>>>>>>>HIg Level Filed  in YAML pod-definition.yaml
+    apiVersion: version of K8s API to create object V1 for POD , Service ....apps/V1 for replicaSet,Deployment
+    Kind : POD // type of object
+    Metadata : data about object name,labels...etc .Disctory Form of YAML
+      name: name of app
+        lables
+            key:value pairs // for grouping many pods..objects , any number of key value pairs can be added here
+    Specs   //different for diffrent object, object specific 
+        conatiners:    ///list of containers
+          -   name:name of container     //value pairs //
+              image: full path of image
+
+kubectl create -f pod-definition.yaml //apply and create same for new object
+kubectl apply  -f pod-definition.yaml //apply and create same for new object
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^TIPPS and TRCKS for creating YAML with IDE
+INTELLIJ, ECLIPSE,NETBEAN, VISUALCODE : all support for YAML format
+But for understanding K8s  specific syntaxt plugin/extenions are needed.Show error related K8s .
+Microsift Visual Studio Code, run on all OS, freely avaialble, support very well, popular.
+MS Visual Studio Code is easy to setup add plugin for K8s.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^END^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Hands-On Labs - Familiarise with the lab environment
+Let's get real!
+We have real labs for you that will help you get some real hands-on experience. Checkout the previous lecture to learn how to access the KodeKloud labs right in your browser!
+First we start with a basic lab to get you familiarized with the lab environment:
+https://uklabs.kodekloud.com/topic/labs-familiarize-with-lab-environment-2/
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^Replication COntroller ReplicaSet^^^^^^^^^^^^^^^^^^^^^^^
+Replcaset identyfy all pods with Selector(label) filed specified in yaml file
+Replicaset ensure sufficient listed number of pods are avaialble
+COntroller : Barin Behind K8S (e.g Replication Controller)
+Replication Coller: (ReplicaSet)
+    Ensure number of pods alive
+    It balances and scale number of pods across Nodes
+            *******    rc-definition.yaml /replicaSet.yaml******
+apiVersion: v1     // apps/v1 if ReplicaSet is used
+Kind : Relication COntroller   // or ReplicaSet
+Metada
+  name: my app
+    Lables
+Spec:
+    selector
+        matchLabels:
+            type: fron-end
+    replica: number // number of pods
+    template :   // temple of pod (it will have all the filed of pod.yaml file except apiVersion ,Kind)
+          metadat:   //of pod
+              labels : 
+          specs // of pods
+              name: of container
+               image: 
+
+1) Selector  has lable associated with pods and ReclaSet can identify pods with lables to monitor/file out of hudred of other pods.
+
+kubectl create -f  rc-definition.yaml  //
+kubectl create -f  replcaSet.yaml  //
+kubectl get  replicationCOntroller // give number of pods and replcaset detaisl
+kubectl get  replcaSet //
+kubectl get pods // created by replcaset.
+
+kubectl replace -f  replcaSet.yaml  // updating replicasetfile  scaling up or down replicas
+kubectl scale --replicas=6  -f replcaSet.yaml  // scaling up or down relcas with command, it will append , not change the file
+kubectl scale --replicas=6  TYPE(replcaset)  name_of_replica set // thirday to scal up and down replcas
+2) based on loads replcase can be incresed, FOr the taht Autscaler provided by GitHUb need to be deployed
+
+kubectl delete pod pod_name  // delete one pod
+kubectl describe replicaSet  name_replicaset //detailed info about replica set
+
+kubectl edit replicaset name-replicaset //this will open tmpt yaml file (temporary and used immediately)for editing purpose by K8s,u
+^^^^^^^^^^^^^^START^^^^^^^^^^^^^^^^^^^^^^^^^^^Deployment ^^^^^^^^^^^^^^^^^^^^
+Deployment[ReplicaSet[POd]] : It includeds bot replicaset adn pod in YAML 
+How to deploy application in  development
+Rolling upgrade 
+Roll back changes
+Mutiple changes,
+
+ *******    Deployment.yaml It is exacatly same as ******
+                apiVersion: v1     // apps/v1 if ReplicaSet is used
+                Kind : Deployment
+                Metada
+                  name: my app
+                    Lables
+                Spec:
+                    selector
+                        matchLabels:
+                            type: fron-end
+                    replica: number // number of pods
+                    template :   // temple of pod (it will have all the filed of pod.yaml file except apiVersion ,Kind)
+                          metadat:   //of pod
+                              labels : 
+                          specs // of pods
+                              name: of container
+                               image: 
+
+1) Deployment yAML same as replicaset except  KIND=Deployment 
+2) arerplicaset is created automatically , under that pods
+
+kubectl create -f deployment.yaml
+kubectl get deployment
+kubectl get replicSet
+kubectl get pods
+kubectl describe deployment  deployment.yaml
+kubectl get all  //this command will show all object pod,repilcaset, deployment...etc
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Deployment UPdates and ROLL back ^^^^^^^^^^^^^
+Roolout & Versioning: Each Deployment is associated with versioning, tracking of deployment is possible.
+
+kubectl rollout  status deployments/name_of_deployments    //
+kubectl rollout  history  deployments/name_of_deployments 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^Deployment Strategy ^^^^^^^^^^^^^^
+Recreate : All pods are deleted , new one are deploymed during Maitenencne Window
+Rolling Update: Defualt Strategy , one by one pod are deleted and new deployed.
+
+kubectl apply  -f deployment.yaml // rolling update if yaml is changed and deploymed again. (image is changed) first way
+kubectl set image deployment/deploment_name name_imager =nginx.12.3 // for chaging the applicaiton image second way
+kubectl rollout undo deployment/deployment.yaml   //it will roll back the deployment
+kubectl create -f deployment.yaml  --record // this will include comment while read histroy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^Basic Of Networking..
+
+Node : Has IP address
+POD  : With in Each Node: 10.244.X.X (subnet) asigned to pod with in one NOde.
+K*s does not setup networking, we have to setup some networking.
+There sre solution avaialble : CISCO,NSX,VMware,cilium,flannel,
+ROUTING : with routing different pods from different NOde can communicate to each other. Kubernetese CLuster.
+
+^^^^^^^^^^^^NOdePort and Kubernetese Services^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^
+NODEPORT Service Type:  Help Us External Facing Application
+      1) Single or mutiple NODES or PODS are possible.
+      2) All PODS are labeled with same labels.
+      3) IP of any NODE can be used to access the cluster.
+      4) Same server distribut the load in Random way , SessionAffity=Yes.
+      
+1)Services: Allow various componeent(fron ent, backend, external database services) to communicate within and out side K8S.
+2)Services: Allow user to coomunciate front end componenent.
+
+3)Ways to access Web App deployed  in POD
+  1) SSH into POD , run curl command to . becasue this is in internal network.
+   2) Accessing with Node IP address.
+
+4)Various Services Types:
+    NodePort Service:  For providing Access to External World.
+    Cluster IP: Internal Access    cluster(fron-end pods) , cluster(redis), cluster(DB), cluster (back end)....
+    Load Balancer: IN supported cloud providers
+
+5)NodePort Service:
+    External user --> Http://IP_of_Node:port(30000--32767) ----NODEPORT Service maps(cluster IP:80)-----> POD_IP:port(80)
+    This service  map port on NODE to port on POD
+    Web application can be access via Node IP Address.
+6) SIngle Node: Many PODS with same lable in same NODE
+    in Service all the PODS are access by it's LABEL/SELECTOR. Load is distributed by algorithm(RANDOM, Session Affinity=YES)  
+7)MULTI  Node: POds distributed in muti nodes
+    IP of any node can be used to access the application,which has same label.
+          ---------- service-definitions.yaml
+            apiVersion:v1
+            Kind:Service
+            metadata:
+              name:
+            specs:   //this will differen in t
+                type:NodePort   // or CLusterIP, Loadbalancer
+               -ports  // many port can be mapped , as many container in Node, port only distiguishes it.
+                    port:80   // service object  port
+                    NodePort:30000 //  30000-32767
+                    targetPort:80  // port of POD
+                selectors:  // this will identify POD, becuse IP address are dynamic, but labels are stable.
+                    app:myapp
+                    type:front-end.
+        
+kubectl create -f serice-defintion.yaml
+kubectl get services
+minikube service service.yaml --url 
+// it will give IP of minikube NOde can be us , minikube can run only one NODE so same node  has the IP for accessing any web app
+//deployed on POD at local machine.
+
+*************************************Cluster IP  Service*****************
+1) PODs can access to each other internally
+2) Cluster(front-end) pods, CLuster(back-ned) pods, cluster(DB)pods....
+3) Above services can access to via CLusterIP service type.
+4) Pods are identified with lables(fron end, redis, back end, bd...etc) in cluster at different nodes
+5)Grouping of PODS are possible my labels name.
+6)The yaml file is same as NODEPORT service type except one thing is missing is port number of NODE is not configured.
+7)  in YAML this is not require to be configured  (" NodePort:30000 //  30000-32767").
+
+kubectl create -f serice-defintion.yaml
+
+**********************************Load Balancer Service******************
+Issue in NODEPort External Facing Service:
+E,g : 
+    Four NODES , N1,N2,N3,N4
+    six PODS :  P1,P2,P3,P4,P4,P5,P6
+    voting-app( labeled):  P1,P2,P3 --->N1,N2
+    reult-app(  labeled):  P3,P4,P5 --->N3,N4
+Both services voting-app and result-app can be accessed via four IP address of NODE in cluster.
+Soloution 1:BUt lot of work
+    1) voting-app URL ----Create NGNIX Load Balancer and point to  P1,P2,P3
+    2) 1) result-app URL ----Create NGNIX Load Balancer and point to  P4,P5,P6
+Soloution 2:
+ type:Loadbalancer  // instead of NodePort   make it Compatible with any cloud,if no cloud it behave like NODEPORT service.
+************Sample Voting  Micro Services Application Deployment Dokcer COntianer LInking********************************
+
+Voting-App(Python)--->In Memory DB(REDIS) ---->Worker(.NET)----DB(PStgreSQL)
+Result-App(NodeJS)<---POSTgreSQL
+1)Auusme Al Images of APP are ready
+2) with the linking TWO container are linked, they are linked by name of container to other as eblow
+docker run -d --name=name_container   redis  // run the Redis image
+docker run -d --name=db   postgres:9.4  // run the Redis image -d mean detached  mode run in back ground
+docker run -d --name=voting  --link redis:redis -p:5000:80 voting-app// 
+docker run -d --name=result -p:5001:80 result-app//
+docker run -d --name=worker --link redis:redis  --name=db worker// not public facing 
+3)But Linking may have been deprecated in future
+************END*****************************
+************Sample Voting  Micro Services Application Deployment Kubernetese********************************
+            Voting-App(Python)--->In Memory DB(REDIS) ---->Worker(.NET))
+            DB(PStgreSQL---->Worker(.NET))
+            Result-App(NodeJS)<---POSTgreSQL
+            Worker App: Access both DB 
+Deploy Container, (by POD, ReplicaSet, Deployment)
+Enable COnnectivity (Create TYPE: ClusterIP Service)
+      : REDIS can be access by worker and Voting-app via service(CLusterIP service)
+      :POSTGRESQL canbe access by wroker and Result-App via service(CLuster IP service)
+External Access (Create NOdePort =TYPE)
+      voting-app (NodePort Type service)
+      result-app (NodePort Type Service)
+
+Node Images are forked from KodeCLoudhub/example-voting-app
+*****************************Deploying Above PODs,Services on MINIKUBE CLuster*****************************
+1)Create Four PODS for
+      a) Voting-App, specifiy  continer port where app  listen, lables, image 
+      b)  Result-App, specifiy  continer port where app  listen, lables, image
+      c) REDIS, specifiy  continer port where app  listen, lables, image
+      d) POSTGRES, specifiy  continer port where app  listen, lables, dictionary( image, id,password)
+      e)worker pod without port,as this is not listning any request.
+2)Create CLustIP for REDIS and POSTGRESSQL
+    specify POD labels to be linked, port number where it listen, ports mapping.
+3) two NOdePort type service for extrnal user
+  Nopde port is mapped to container port, with the lable selecter linked to the POD.
+kubectl get pods,svc // for getting services and pods running 
+minikube service  voting-service --url // it will show URL fort he app , use in browser that for accessing app.
+*************************Deplyment***********************************************************************
+1) Using deployment is recoomedned way.
+2)It automatically create replica set.
+3)It automatically make rolling updates.
+4) If POD are used for each application rolling update not possible. Application need to bring down.
+5)rollbacl possible,
+6)versioning histroy possible.
+https://github.com/kodekloudhub/example-voting-app-kubernetes
+**************************************Kubernetese Hosting Self Hosted/Mananged Hosted***************************************
+Self HOsted/Turkey Solution
+  Provisioning VMSs
+  You configure VM
+  You maitain VM
+  AWS uisng KOPS, KubeOne (some sort of scripting...)      
+Hosted Solutions(Mananged Solutions)
+    Kubernetese-As-A -Service
+    Provider Mananged (Provisioning VMSs,configure VM, maitain VM)
+    GKE -GCP, AWS-EKS, AUZURE-AKS
+*********************************GKE Deployment The microservices**************************************
+1)create cluster.
+2) connect from shell to to cluster.
+3) kubctl is pre-installed at GCP shell,
+4) Here instead of  service TYPE=NOdePORT need to be configured to TYPE=LoadBalancer.
+kubectl create -f *.yaml //  will create all object in one command
+
+5) automatically Native loadbalancer will be created and IP would be assinged and displyed for accessing the services.
+6) Services would be assinged external IP , witht hem application can be accessed.
+********************************************AWS EKS ***************************
+1)Install Kubectl CLI
+2)EKS cluster Role
+3)IAM Role for NOde Group
+4)VPC
+5)EC2 Key Pair foraccessing worked NOdes.
+6)AWS Basics
+
+7) configure Kubectl to work with remote cluster, by default it work with local MiniKube.(copy)
+    To configure your computer to communicate with your cluster
+    aws eks update-kubeconfig --region region-code --name voting-ap-cluster
+
+kubectl get nodes //verify if cluster is configured in AWS
+8) Master Node can not be configured , as this is mananged by AWS cloud
+9) loadbalcer uRL will be created ..something  like this  :  aws.uswest.com
+************************************Setting Up Mutli Node CLuster Using KubeADM (KubeAdmin Tool)************
+1) Kube Admin tool assist in setting up MutiNode cluster.
+
+Component of K8s:
+    Master Node:
+      etcd
+      Kube-APIserver
+      node-controller
+      replica-controller
+      kubectl
+    Worker Nodes:
+      Kubelet : starting pods and running containers
+      COntainerRuntime(docker)
+      kubectl
+
+                            Setting up K8s
+   a)Node Setup: Master Node, Worker Node(VM, Physical Machines ) 
+  b) COntainer Setup: container runtime is installed on all nodes: It boot straps the K8s system
+  c) KUBEADM: kubeadm tool is setup on all machines
+  d)Mater: intialize all component of master node.
+
+  e)POD Network: is setup across all the nodes
+  f) Join Worker node: all nodes will join Master node
+  g) after this setup is ready for uses.
+  ***********************************************Hand-On Steps(vgrant & Virtual BOX)**************************
+Vgrant & Virtual BOx toger used to setup Nodes VMs.
+Vagrant is a source-available software product for building and maintaining portable virtual software development
+environments; e.g., for VirtualBox, KVM, Hyper-V, Docker containers, VMware, Parallels, and
+
+1)Setup Virtual Box  (Hypervisor)
+2) Vagrant: Vagrant file has configuration, number of master node, worker nodes, IP address,.
+        One command of Vgrant will bring up VM
+vgrant status // check the status of VM created command
+vgrant up  // this will bring up VM , as per configuration in  "vgrantfile"
+vgrant ssh kubermaster  //  command for connecting  to the kubemaster node
+
+3)Install CONTAINERD 
+***********************************************Various Option for CLuster Building************
+  NON-Cloud Options:
+   MiniKube: For developer option
+    MicroK8s : For developer option
+    Kubeadm: For production Grade Setup
+CLoud Options: GCP,AWS,Azure, IBM
+************************************MiniKube Setup***************
+Minikube:  Come in Single Image with all below setup, it nead Hypervisor System (Virtual BOx)
+    Single Node cluster
+    connect with Kubectl
+
+Worker Node:
+    Kubelet
+    COntainer Runtime
+Master Node
+  etcd
+  Api Server
+  node-controller
+  replica-controller
+*****************************************************************
+Three course:
+Kubernetese Biginer :
+Kubernetese Developer: configmap,logging-monitoring,jobs,secrect,service account,secrets,muti container pods,
+    readiness and liveness prob,jobs,services,networking.
+Kubernest Administrator
+
+************************************END OF this course**********************
+
+
+**********************************References********************
+The upcoming demo is completely optional, unless you want to setup a local environment on your laptop. Our hands-on labs will be sufficient for you to practice.
+
+Some links used in the upcoming demo may have changed. Please find the latest links to the documentation topics below:
+
+Install MiniKube: https://kubernetes.io/docs/tasks/tools/install-minikube/
+
+VirtualBox: https://www.virtualbox.org/wiki/Downloads
+
+MiniKube Download page for  Windows: https://github.com/kubernetes/minikube/releases
+
+
+
+While using Minikube with  Virtualization technologies, specify the --vm-driver option like this:
+
+minikube start --vm-driver=<driver_name>
+More about it here: https://kubernetes.io/docs/setup/learning-environment/minikube/#specifying-the-vm-driver
+
+**********************************************************************
