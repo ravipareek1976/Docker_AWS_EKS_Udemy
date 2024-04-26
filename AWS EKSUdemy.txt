@@ -387,7 +387,43 @@ cleanup now
 
 Note EBS need to be deleted manually becasue we specified policy to reatain
 
+************************************************Deploy Statefull App USing AWS EFS********************
+1) EFS: Network File System(mananged),   ec2-instances from mutili AZ can acess it.
+2)hihgly avaialble, expensive,pay per use
+3) WordPress App Static content can be shared among worked nodes from different AZs
 
+WordPress App -EFS Storage Hands-On
+1)Enable EFS
+2)Create NameSpaces and storageclass
+3)Deploy MYSQL
+4)Deploy WorPress
+
+^^^^^^^^^^^^^^^^Layerd Infrastructure/Architecture of Stateful App
+-------K8 Node1--------------------K8 Node2----------------------------K8 Node3---------
+MySQL POD 			 WP POD                               WP POD					
+WP POD				 WP POD				      WP POD
+-------------------------------------------------------------------------------------
+			Persistenten Volume CLaim-PVC
+-------------------------------------------------------------------------------------
+				Storage Class
+-------------------------------------------------------------------------------------
+EKS                        EFS-CSI-Driver/Provisioner
+-------------------------------------------------------------------------------------
+				EFS
+-------------------------------------------------------------------------------------
+
+1)Enable and Create EFS
+2)create NameSpace ---
+kubectl create namespace ns-eks-course-efs  // command
+kubectl get namespaces  //verify name space
+kubectl apply -f create-rbac.yaml --namespace=ns-eks-course-efs  // cluster role binding is done to admin created 
+3) create EFS-CSI-Driver with helm that was installed previously.
+4) create EFS storage class with   EFS-CSI-Driver/Provisioner
+kubectl apply -f create-storage.yaml --namespace=ns-eks-course-efs  // create storage class
+5) persitent volume claim is created
+kubectl apply -f claim.yaml --namespace=ns-eks-course-efs
+
+	
 
 
 
