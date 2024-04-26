@@ -1,0 +1,395 @@
+BY Paulo Dichone :
+Deploy Docker Containers on Kubernetes on AWS EKS & Fargate: Kubernetes Stateful & Stateless apps using ELB, EBS & EFS
+
+Without ESK need to manange your own:
+	Deploy Master Nodes,Deploy ETCD, Setup CA for TLS,setup monitoring/autoscaling/self healing
+	setup security such as authentication, finally setup worker nodes.
+	seperate for clusters dev,qa,prod...etc
+	hard to manange controle plane.
+	
+
+AWS EKS Mananges following componenet of K8s:
+	Master Node in HA
+	Etcd ensemble HA
+	API Server
+	KubeDNS
+	Scheduler
+	Controller Mananger
+	CLoud COntroller
+	Autentication by IAM
+
+User need to deploy worker node and applications.
+
+AWS create EKS cluster.
+
+EKS Setup Process: Create EKS CLuster : mycluster.eks.amazonaws.com
+K8 Master HA in 3AZa, ETCD 3AZs HA, IAM PlugIn Setup,CA Setup(TLS),Auto scaling, Load Balancer NLB & ELB.
+
+worker nodes in 3AZs HA.
+HA :Everthing under 3 Azs 
+
+
+AWS EKS Architecture:
+	>KUbectl (eksCTL)---> AWS EKS(COntrol PLane)(mycluster.eks.amazonaws.com)----->K8worker Nodes in AZ A,AZ B, AZ C
+	BY Developer--------->Mananged by AWS---------------------------> By Developer
+	Master and WOrked node are created in Threee AZs.
+	AWS EKS automatically create Autoscaling Group.
+
+Integration of K8 with AWS various Services :
+	API calls can be audited with CLoud TRails.
+	Authentication with IAM,  authrorization through RBAC.
+	CLoud Formation template to manange your cluster
+	AMI can be manged for nodes
+	Load Balancer, EBS, EFS
+	Container Registry on ECR
+	Networking per -pod IP address with ENI(Elastic Network Interface)
+	AWS CLI eksCTL
+	Security Group
+	VPC, Subnets
+
+
+Kubernetese Components to know:
+	Kubelet
+	Kubernetese API Server
+	Master & Worker Nodes
+	Pods
+	Deployment, Services
+	Networking within Kubernetese.
+	KubeCTL
+
+
+
+
+^^^^^^^^^^^^^^^^^^^^^^AWS ESK CLuster Setup via eskctl-hands-on
+ CLoudFomration Template will be used :
+> eksCtl : created by wevework 
+  automatically create VPC,2subnets in 2 Azs
+  
+
+1) Crereating EKS Cluster
+	eksctl create cluster //is command to create cluster. create worker node  // in background create VPC,wroker nodes, use EKS AMI,  in region where EKS supported
+	eksctl create cluster -f cluster.yml  // customized cluster creation, using CloudFormation 
+	time eksctl create cluster -f cluster.yml  // time show how long provisioning takes place
+//verify if cluster created
+kubectl get nodes
+
+
+ ^^^^^nodegroup and spot instances scaling adding deleting node group^^^^^^
+ 
+2) eksctl get cluster // command to give cluster detail  get the exisitng cluster
+ 3)eksctl  get nodegroup --cluster  "name of eks cluster" // will show AMI, num of nodes, minand max nodes..
+ //scaling node groups below is command for 
+ 4) eksctl scale up nodegroup \
+  --cluster EKS-course-cluster \
+  --nodes 5 \
+  --nodes-max 5 \
+  --name ng-1
+ 
+ //scaling down node groups below is command for 
+ 
+ 5) eksctl scale up nodegroup \
+  --cluster EKS-course-cluster \
+  --nodes 3 \
+  --nodes-max 3 \
+  --name ng-1
+ 
+ 
+
+// adding node group of mixed ondemand and spot instances
+
+6) eksctl create nodegroup --config-file=eks-course.yaml --include='ng-mixed'  // this will include addiotnal node group ng-mixed.
+
+7)eksctl  get nodegroup --cluster  "name of eks cluster" // verify both nodes groups are listed
+
+8) eksctl delete nodegroup --config-file=eks-course.yaml --include='ng-mixed'  //deleting mixed node groups
+eksctl delete nodergroup --config-file=eks-course.yaml include='ng-mixed' --approve // or try this
+
+eks cluster -f cluster.yml // in thisfile ondemand spot instances can be configured which will be utilized by node group
+
+9)kubectl get nodes //verify only one node group is deleted other is still there. 
+
+//also while deleteing one node group it will push pods to other node group.
+
+^^^^^^^^^^^^^^^^^^^^Autoscalar^^^^^^^^^^^^
+CLuster Autoscalaer Overview:
+  Scaling in and out happen based on CPU & RAM request.
+  This Kbernetese feature not EKS feature
+  Stateful : node for single AZ (because underlying EBS can not be shared across mutile AZs
+  StateLess :  node group for mutil AZ.
+ 
+
+Cluster AutoScalar -Hands On Part1
+	Single AZ Statefull: create two node group 
+	Muti AZ stateless : create one node group
+Create the Autoscalar 
+	Sett annotation to avoit's it's evication
+	Set matching image version and cluster name in deployment.
+
+1) //create node group for autoscalaer for stateful and staless
+eksctl create nodegroup --config-file=eks-course.yaml
+
+//deleteting one of the node group
+eksctl delete nodegroup --cluster=EKS-course-cluster --name=ng-1 --approve
+
+2) //creating autoscaler itself.
+//deployment of autoscalral which is avaialble from GitHUB configuraiton, ready made provided by Kubernetese itself, image is deployed
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
+
+//annotating autoscalar, to prvent from being evicted  , this is for incresing number of POD 
+kubectl -n kube-system annotate deployment.apps/cluster-autoscaler cluster-autoscaler.kubernetes.io/safe-to-evict="false"
+kubectl -n kube-system annotate deployment.apps/cluster-autoscaler cluster-autoscaler.kubernetes.io/safe-to-evict="false" --overwrite //double confirm
+
+// console update the kubernetese version 1.22 // at autoscaler correct version supported get correct image.
+//https://github.com/kubernetes/autoscaler/releases
+
+3) edit autoclsuter to point to the cluster  , image version is also changed
+//* set the image version at property ```image=k8s.gcr.io/cluster-autoscaler:vx.yy.z```  
+//* set your EKS cluster name at the end of property ```- --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/<<EKS cluster name>>```
+
+kubectl -n kube-system edit deployment.apps/cluster-autoscaler
+
+4) save exit , with this command.
+:x!
+
+
+5// detail about any deployment
+kubectl -n  kube-system describe deployment  cluster-autoscalar
+
+
+6)// testing by deploying nginx in kubernetese scaling up/down , logs
+kubectl  apply -f nginx-deployment.yaml // deployment
+
+
+kubectl get pod  
+kubectl get nodes -l instance-type =spot // filtering throught he label check node before 
+kubectl scale --replicas=3 deployment/test-autoscalaer
+kubectl scale --replicas=4 deployment/test-autoscalaer // triggere autoscalaer
+
+7)//after increasing pods new nodes will be created by autoscalaer
+kubectl get nodes -l instance-type =spot // filtering throught he label
+8)//check at cosole EC-->spot instances are created.
+
+9// reduce replicas 
+kubectl scale  --replicas=1 deployment/test-autoscalaer
+
+10)// again verify instances are redcuced
+kubectl get nodes -l instance-type =spot // filtering throught he label
+
+11) check the logs
+kubectl -n kube-system logs deployment.apps/cluster-autoscaler
+//filtering logs by text
+kubectl -n kube-system logs deployment.apps/cluster-autoscaler | grep -A5 "Expanding node group"
+
+Controle PLane Logging to CLoud Watch ,Five Log types can be enabled, on EKS cosole these can be enabled.
+	API types
+	Audit
+	Authenticator
+	Controller Mananger
+	Scheduler
+CLoud Watch Incurs cost
+For enabling need to add this is ESK yaml file, KIND=ClusterConfig: like below // cnfigured in same yaml file needed for cluster creation.
+		cloudWatch:
+		  clusterLogging:
+			enableTypes: ["api", "audit", "authenticator"]
+			#enableTypes: ["*"] #for all types to be included
+
+// after enabling cloud watch in yaml use below to enable looging also
+12)eksctl utils update-cluster-logging --config-file eks-course.yaml --approve
+
+//cloudwatch incurs cost so need to disable it again
+13)eksctl utils update-cluster-logging --cluster=EKS-course-cluster --disable-types all --approve
+
+Helm is pachage mananger,we can install like redis,mysql....it will deploy pods in AZs.
+14)install helm client and server, repo
+
+RBAC for IAM users
+Creating cluster Admin
+	create IAM user : 
+		create admin user and accees key and secret(programatic acces).
+		15)kubectl -n kube-sysem get cm // use this command to see config map.
+		16)kubectl -n kube-system get configmap aws-auth -o yaml > aws-auth-configmap.yaml // edit the yaml file and add a "mapUsers" section
+		17)kubectl apply  role.yaml aws-auth-configmap.yaml  -n kube-system// apply the changes of config map to for admin users
+		18)kubectl -n kube-system describe cm aws-auth // uder map user verify if admin is added 
+	Map user to K8s role
+	test the setup.
+
+	
+	19) add user to ~/.aws/credentials file  // add user to this file  access key and secret key and region are addedd, output json
+	20) aws sts get-caller-identity // verify which progile access it
+	21) export AWS_PROFILE="clusteradmin"
+	22) aws sts get-caller-identity ///verfy caller is changed to clusteradmin now.
+	23) kubectl - kube-system get pods ///access admin to all pods from namespace
+	24) kubectl run nginx --image=nginx --restart=Never //check if admin has access  can run nginx 
+	
+create read-only user for dedicated name space
+	create namespace
+	create IAM userCreate Role and Binding
+	Map user to K8s role
+	Test the Setup
+25) kubectl create namespace production // user will be added as read-only mode.
+26)kubectl apply -f role.yaml // role for read only to namespace.	
+27)kubectl apply -f rolebinding.yaml // rolebinding for read only to namespace.
+28)kubectl -n kube-system get configmap aws-auth -o yaml > aws-auth-configmap.yaml // edit the yaml file and add a "mapUsers" section for read only user
+29 kubectl apply  -f aws-auth-configmap.yaml // apply changes to added readonly user.
+30)add user to ~/.aws/credentials file  // add user to this file  access key and secret key and region are addedd, output json
+31) export AWS_PROFILE="prod-viewer" //
+32) aws sts get-caller-identity ///verfy caller is changed to clusteradmin now.
+32) kubectl -n kube-system get pods // forbidded access becasue user isnot allowed for namespace kube-system
+33)  kubectl -n production  get pods //user will be allowed o access this name space as he has readonly  access to it.
+34) kubectl run nginx --image=nginx --restart=Never -n production // now allowed as read only access to this.
+
+EKS in Depth :
+Kubernetese COntrole PLan:
+   Master Node, ETCD: in each THree AZs
+   It is hihgly avaialble
+   It is single tenant it is in ur VPC
+EKS Networking VPC: 
+	Worker Node live in Private Subnet.
+	Public Subnet to have load balancer will connect to the world.: done in background by AWS
+	COntrole Plan Security GroupWorker NOde Security Group :done in background by AWS--------------------------
+	Each POD will receive one IP -VPC CNI. Limitation is subnets. Need Wider range. COmmon to have 16K pods.
+	EC2 has limited IP addresses supported.: It limits the number of pods on EC2 .
+	OPtional Calcilo: on EKS: provide ntwork  policy that directly assinged to pods. Pod Level Ganular level security.
+	IAM(AWS) & RBAC(Kubernetese) , 
+	
+	Service Load Balancer: EKS will create classic load balancer.
+	It support Loadbalncer for all CLoud Provider LoadBalancer with in ""Kind=Service"" annotation will tel type of cloud load balancer.
+	AWS ALB supported by Kubernetese ALB INgress.
+	
+************************Deploy the Kubernetese Dashboard(this not EKS feature)***************
+	
+Visual way to configure and view Kubernetese cluster alternate of CLI.
+General Purpose Web UI for K8s clusters.
+	Display Deployments,POds,Replicas,Namesapces,Services,Nodes&Storage,Usgae Metrics
+	Excecute command based on RBAC
+	Login via Bearer Token.
+	K8s Dashboard itslef is Pod live in cluster.
+	
+Kubernetese Dashboard HandsON 
+1)Install Kubernetese Dashboard(in pod)
+2)Create Admin Service Account and CLuster Binding
+3)Create Token and explore Dashboard.
+
+   
+//To install k8 dashboard use this command:
+
+kubectl apply -f 
+
+
+1) create our Admin Service Account and Cluster ROleBinding^^^^^^^^^^
+KInd:ServiceAccount in YAML file
+2)Creating Token and viewing the K8 Dashboard.
+KIND: ClusterRoleBinding in Yaml file it is configured with Service Account Created Above
+kubectl apply admin-service-account.yaml
+
+3) Creating  Bearer Token to access Dashboard.
+kubectl proxy // open UI , enter token received from previous stage.
+
+*********************************************Deploying Stateless Sample App with Back End and front ENd both(REDIS)********
+1)Deply Guest Book app, backend front end resources,scaling pods up/down, chaos testing, awS LoadBalancer
+2) Architecture: Back End
+Single Leader (Write-Servie) -POD
+Mutil FOllower (READ-Service) -POD
+Leder COninuously sync followers.
+3)Front End POD: PHP App  -POD
+load balanced to public
+Read Load Balance tover mmutiple followers DBs.
+
+kubectl get pods -O wide // detailed  of pods with IP address more details
+kubectl describe node  node_name // detail about the pod
+
+^^^^^^^^^^Chaos Teting ^for the above app^: Self Healing Mechnism of Kubernetese^^^^^^^^^^
+
+Kill Pods,stop Worker Nodes
+
+test exisitng numbe rof nodes, pods 
+   ^^^^^^^^deleteting pods manually
+kubectl get nodes
+kubectl get pods -o wide
+kubectl delete pod pod_name // kubernetese will restore new one keep same as defined in replicas set.
+
+^^^^^^^^^^^^^^Self Healing ********
+  orginally three worker nodes. stop one node.
+   automatically new one will sping up new one.
+
+
+****************************************Clean UP********
+
+Kubectl delete deployment -l app=redis
+Kubectl delete service -l app=redis
+Kubectl delete deployment frontend
+Kubectl delete service frontend 
+
+***************Deploy StateFul App using EBS*************
+1)App: Word Press., My SQL DB.
+2) How we use EBS volume for this.
+Objective:
+3) Architecture
+	
+4)Create namespace
+5)Create Storage CLass & Persistentence volume
+6)Deploy DB Back End
+7) Deployment vs Statefull Set.
+		wordpress as deployment
+		word press as stateful
+8) Architecture Componenets.
+	LoadBalancer (HTTP)
+	Front End: WordPress PoD + Persitent Volume(EBS)
+	KIND Service: Front to connect Back End SQL
+	MY SQLPOD : Persistent Volume (EBS)
+ISSUE With PV by EBS
+	9) PODS from Different AZ(Avaialbility Zone)can not access to EBS in other AZ
+	10) EBS and POD are tigtly coupled with in Availability ZOne.
+	11) But within Same Availability ZOne Pod can share EBS volume.
+Solution of EBS is EFS:
+NameSpaces: 
+	seperating workload by project,client,team,environment(dev,qa,prod)
+	resource quota,access control.
+//kubectl create namespace ns-eks-course  //command to create namespace in k8s
+//  kubectl get  namespaces 
+
+12 ) get token and login to DashBora of K8s
+
+//  kubectl get storageclasses --all-namespaces // provide alll storage classes lsit
+13) KInd:StorageClass createtion specify AWS specific EBS in this file 
+// this file will specify that Kubernetese can use AWS GP2 (EBS)storgae type.
+// kubectl apply -f gp2-storage-class.yaml --namespace=ns-eks-course  // create Storgae Class Object
+14) PVC Persitent volume claim: Once EBS is specified need SQL willl claim it 
+kind: PersistentVolumeClaim object created for WordPress and MySQL
+// kubectl apply -f pvcs.yaml --namespace=ns-eks-course 
+// kubectl get pvc --namespace=ns-eks-course   // defualt storage class  will ve shown here ,pending
+// kubectl describe sc gp2 // details about the storage class we specfied.
+
+ ^^^^^^^^^^Deploy Back End
+ 1)create MySQL password as secret (K8s resource): 
+ 			create secret which stores mysql pw, to be injected as env var into container
+			verify if secret is is created
+	// kubectl get secrets --namespace=ns-eks-course  // paswword will not visible 
+ 2) Deployment of MY SQL POD and service.
+
+ 3)Deployment Vs StatefulSet (EBS with in Availability ZOne): Choose Required as per requirement.
+   Deployment : Associated with Node, with in node it can move. 
+   SatefulSet: : PV  associated with PODS and move amond nodes but within same availability ZOne.
+It depedends on which type of architecture required strageclass choose Deployment Vs StatefulSet.
+
+^^^^^^^KIND=Deployment^^^^^^WordPress as Deployment PV Linked to Single Node()
+All pods within insgle Node will use same Persistent Volume 
+In Word Press Deployment.yaml : id /password specified for MySQL, pv_claim,mount path at storage.
+// kubectl get pvc --namespace=ns-eks-course  // get all PVc , now it is bound state.
+check load balncer in conslole, three instance of loadbalacer will be created 
+
+running word press would be installed /id/pw can be created.
+If we scale pod they will run on same Node.
+^^^^KIND=StateFulSet^^^^^^^^^WordPress as SatefulSet  PV Linked to Pods, Can move across Node
+Each POD will have it's own PV, can move along with POD across Nodes.
+
+cleanup now 
+
+Note EBS need to be deleted manually becasue we specified policy to reatain
+
+
+
+
+
+
+
