@@ -423,7 +423,15 @@ kubectl apply -f create-storage.yaml --namespace=ns-eks-course-efs  // create st
 5) persitent volume claim is created
 kubectl apply -f claim.yaml --namespace=ns-eks-course-efs
 
-	
+********************************Fargate**********************
+Fargate
+	Container for ECS and EKS
+	AWS provided infrastructre -you focus on aplicaiton
+	Pay for POD run time.
+	Pricing based on : CPU,Memeory,OS,Region
+ServerLess Kubernetese
+EKS+Fargate: AWS responisble for ->: COre AWS Infra K8Clinet, DockerRun Time, OS,EC2 (except app pod)
+EKS        : AWS responisble for ->: only  COre AWS Infra ( ecept K8Clinet, DockerRun Time, OS,EC2, except app pod).
 
 
 
