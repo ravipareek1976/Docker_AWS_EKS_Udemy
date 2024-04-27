@@ -434,6 +434,35 @@ EKS+Fargate: AWS responisble for ->: COre AWS Infra K8Clinet, DockerRun Time, OS
 EKS        : AWS responisble for ->: only  COre AWS Infra ( ecept K8Clinet, DockerRun Time, OS,EC2, except app pod).
 
 **************************************Clean Up********************
+*****************************************EKSCTL WEAVWORK*************
+1)EKSCTL clinet made by wevwork and become official by AWS
+2)eksctl.io
 
+eksctl create cluster --help // help command
+eksctl create cluster -f eks-course.yaml  // will create VPC , Subnet, CLuster of 
+time  eksctl create cluster -f eks-course.yaml // same as above command , will also give time taken to create it.
+						//cluster will be deployed randomly in AZs
+*******************************************Crete VPC /Create AWS Infrstructure*************
+				^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+						Internet /OutSide world
+				^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+							IGW
+				^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+						Security Group
+				^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+						SubNet1(AZ1)   SubNet2(AZ2)   SubNet3(AZ3)
+****************************Cerate K8 Cntrol plane******************************************
+Create EKS cluster using console and use VPC,Security Group , Subnet created in previous setps
+*******************Setup Command Line CLI install and configure kubectl*****************************************
+   kubctl ---> reply on----->kubeclt config file --->
+EKS Endpoint
+User Authentication 
+	aws-iam-authenticator executable
+	generate an authentication token based on 
+		aws credentials
+Use MOBAXerm Tool for SSH connection
+
+INstall  Kubectl
+aws authenticator is downloaded and installed
 
 
